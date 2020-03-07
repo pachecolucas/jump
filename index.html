@@ -13,9 +13,7 @@
 </head>
 <body>
 
-  <script type="text/javascript">
-
-  let ctx, distancia = 0, posObstaculo = 800, j1, j2,j3, o, t;
+<script type="text/javascript">
 
   class Desenho {
     constructor(x, y, w, h, c) {
@@ -24,14 +22,21 @@
       this.w = w;
       this.h = h;
       this.c = c;
-}
+  }
 
-    desenha() {
+    desenha(ctx) {
       ctx.fillStyle = this.c;
       ctx.fillRect(this.x, this.y, this.w, this.h);
     }
 
   }
+
+  class Chao extends Desenho {
+    constructor() {
+      super(0, 550, 800, 50, "#004400");
+    }
+  }
+
 
   class Jogador extends Desenho {
 
@@ -43,20 +48,33 @@
       });
     }
 
-    atualiza() {
-      if (this.y + this.h >= 600) {
-        this.y = 500;
-      } else {
+    desenha(ctx) {
+      if (this.y + this.h >= 550) { // chegou no chão?
+        this.y = 450;
+      } else { // se não chegou, continua caindo
         this.y += 26;
       }
+      super.desenha(ctx);
     }
 
     pula() {
       this.y -= 100;
     }
 
-    atira() {
-      console.log("Hora de atirar");
+    colidiu(obstaculos) {
+      for(var i = 0; i < obstaculos.length; i++) {
+        var o = obstaculos[i];
+        //console.log("Jogador", this.x + this.w);
+        //console.log("Obstáculo", o.x);
+        if (this.x + this.w >= o.x && this.x <= o.x + o.w) { // colide verticalmente
+            console.log("COLISAO VERTICAL!");
+            if (this.y + this.h >= o.y && this.y <= o.y + o.h) {// colide horizontalmente
+              console.log("COLISAO HORIZONTAL!");
+              return true;
+            }
+        }
+      }
+      return false;
     }
 
   }
@@ -64,118 +82,74 @@
   class Obstaculo extends Desenho {
 
     constructor() {
-      super(800, 500, 50, 100, "red");
+      super(800, 450, 50, 100, "red");
     }
 
-    desenha() {
-      super.desenha();
-    }
-
-    atualiza() {
-      this.x -= 20;
+    desenha(ctx) {
+      this.x -= 25;
+      super.desenha(ctx);
     }
 
   }
 
-  class Tiro extends Desenho {
+  class Fundo extends Desenho {
+    constructor() {
+      super(0,0,800,600,"#DDDDFF");
+    }
+  }
+
+  class Jogo {
 
     constructor() {
-      super(800, 300, 100, 20, "blue");
+      // cria o canvas
+      this.setCanvas();
+      this.inicia();
+      this.conta = 1;
+      this.jogando = true;
     }
 
-    desenha() {
-      super.desenha();
+    setCanvas() {
+      let canvas = document.createElement("canvas");
+      canvas.width = 800;
+      canvas.height = 600;
+      document.body.appendChild(canvas);
+      this.ctx = canvas.getContext("2d");
     }
 
-    atualiza() {
-      this.x -= 30;
-    }
-  }
-
-  function main() {
-    // cria o canvas (área do jogo)
-    let canvas = document.createElement("canvas");
-    canvas.width = 800;
-    canvas.height = 600;
-    document.body.appendChild(canvas);
-
-    // pega o ctx (caneta para desenhar)
-    ctx = canvas.getContext("2d");
-
-    // cria o jogador
-    j1 = new Jogador();
-    j2 = new Jogador();
-    j3 = new Jogador();
-    j2.x = 250;
-    j2.c = "yellow";
-    j3.x = 450
-    j3.c ="blue"
-
-    // cria obstáculos
-    o = [new Obstaculo()];
-
-    // cria tiro
-    // t = new Tiro();
-
-    // repetição
-    window.setInterval('loop()', 500);
-  }
-
-  function loop() {
-    console.log("chamou loop() ...");
-    // limpa tudo
-    ctx.fillStyle = "#F5F5F5";
-    ctx.fillRect(0, 0, 800, 600);
-
-    // desenha o jogador
-    j1.desenha();
-    j2.desenha();
-    j3.desenha();
-
-    // veja se deve adicionar um novo obstáculo
-    if (o[o.length-1].x < 500) {
-      o.push(new Obstaculo());
+    inicia() {
+      this.fundo = new Fundo();
+      this.j = new Jogador();
+      this.chao = new Chao();
+      this.obstaculos = [];
+      this.obstaculos.push(new Obstaculo());
+      var self = this;
+      setInterval(function(){return self.repete();}, 500);
     }
 
-
-    // desenha obstáculo
-    for (let i = 0; i < o.length; i++) {
-      o[i].desenha();
+    limpaTela() {
+      this.fundo.desenha(this.ctx);
     }
 
-    // desenha tiro
-    // t.desenha();
+    repete() {
+      if (!this.jogando) {
+        console.log("Eu não vou entrar aqui!");
+        return false;
+      }
+      console.log("REPETINDO...", this.conta);
+      this.conta++;
 
-    // verifica colisão
-    // let
-    //   a = j.x,
-    //   b = j.x + j.w,
-    //   c = o.x,
-    //   d = o.x + o.w;
-    // if (b >= c && a <= d) {
-    //  alert("colidiu");
-    // }
-
-    // atualiza todos
-    j1.atualiza();
-    j2.atualiza();
-    j3.atualiza();
-
-    // desenha obstáculo
-    for (let i = 0; i < o.length; i++) {
-      o[i].atualiza();
-    }
-
-    // tira quem está fora da tela
-    for (let i = 0; i < o.length; i++) {
-      if (o[i].x < -o[i].w) {
-        o.splice(i, 1);
-        console.log(o);
+      this.limpaTela();
+      this.chao.desenha(this.ctx);
+      this.j.desenha(this.ctx);
+      this.obstaculos[0].desenha(this.ctx);
+      if (this.j.colidiu(this.obstaculos)) {
+        this.jogando = false;
+        console.log("FIM DE JOGO!");
       }
     }
+  }
 
-}
-  main();
+  let jogo = new Jogo();
 
   </script>
 
