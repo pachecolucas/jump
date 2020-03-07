@@ -43,9 +43,12 @@
     constructor() {
       super(50, 50, 100, 100, "green");
       let self = this;
-      document.addEventListener("mousedown", function(){
-        self.pula();
-      });
+
+      document.body.onkeyup = function(e){
+        if(e.keyCode == 32){ 
+          self.pula();
+        }
+      }
     }
 
     desenha(ctx) {
@@ -123,7 +126,7 @@
       this.obstaculos = [];
       this.obstaculos.push(new Obstaculo());
       var self = this;
-      setInterval(function(){return self.repete();}, 500);
+      setInterval(function(){return self.repete();}, 250);
     }
 
     limpaTela() {
