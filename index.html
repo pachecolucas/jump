@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-br" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Jogo de pular</title>
+    <style>
+      canvas {
+        display: block;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript">
+      // valores constantes que não mudam durante o jogo
+      const GRAVIDADE = 1.4;
+      const LARGURA = 800;
+      const ALTURA = 600;
+      const FORCA_PULO = 20;
+      const QTD_MAX_PULOS = 3;
+
+      // variáveis que utilizaremos no jogo
+      var canvas, // área do jogo
+        ctx, // context do canvas (uma espécie de caneta para desenhar)
+        personagem, // o quadradinho que fica pulando
+        chao, // parte de baixo do jogo
+        fundo; // a cor do fundo do jogo
+
+      /**
+       * CLASSES QUE IREMOS USAR
+       * Esta é a parte com os conhecimentos de
+       * Programação Orientada a Objetos (POO)
+       * podem nos ajudar a entender
+       */
+
+      /**
+       * Classe Personagem:
+       * esta classe facilitará a construção de desenhos da tela pois
+       * já prevê que tudo que é desenhado tem um conjunto de valores.
+       */
+      class Desenho {
+        // método construtor
+        constructor(x = 0, y = 0, w = 50, h = 50, c = "#ff00ff") {
+          this.x = x; // posição horizontal (da esquerda para a direita)
+          this.y = y; // posição vertical (de cima para baixo)
+          this.w = w; // largura (width)
+          this.h = h; // altura (height)
+          this.c = c; // cor
+        }
+
+        // manda o desenho aparecer na tela
+        draw() {
+          console.log(this);
+          ctx.fillStyle = this.c;
+          ctx.fillRect(this.x, this.y, this.w, this.h);
+        }
+      }
+
+      /**
+       * Classe Personagem:
+       * tem tudo que a classe Desenho tem, mais a capacidade de pular
+       * e ser atraído pela gravidade
+       */
+      class Personagem extends Desenho {
+        // método construtor
+        constructor(x, y, w, h, c, v = 0) {
+          // chama o método construtor da classe pai (Desenho)
+          super(x, y, w, h, c);
+          // seta os valores específicos da classe Personagem
+          this.v = v; // velocidade
+          this.pulos = 0; // quantidade de pulos (começa sendo sempre 0)
+        }
+
+        // método que desenha o personagem na tela
+        draw() {
+          // invoca o método draw da super classe (Desenho)
+          super.draw();
+          // verifica se chegou no chão
+          if (this.y + this.h + chao.h >= ALTURA) {
+            // chegou no chao
+            this.y = chao.y - this.h;
+            this.v = 0;
+            this.pulos = 0;
+          } else {
+            // ainda está no ar
+            this.y += this.v;
+            this.v += GRAVIDADE;
+          }
+        }
+      }
+
+      // função que executa cada vez que o jogador clica
+      function click() {
+        // se o jogador ainda não deu a quantidade máxima de pulos
+        if (personagem.pulos < QTD_MAX_PULOS) {
+          // dá mais um pulo
+          personagem.y--;
+          personagem.v = -FORCA_PULO;
+          personagem.pulos++;
+        }
+      }
+
+      // função que fica sendo chamada o tempo todo automaticamente
+      function loop() {
+        // limpa tudo
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, LARGURA, ALTURA);
+
+        // desenha objetos
+        fundo.draw();
+        chao.draw();
+        personagem.draw();
+
+        // desenha tudo novamente
+        window.requestAnimationFrame(loop);
+      }
+
+      // função que executa uma única vez no início do jogo
+      function main() {
+        // cria o canvas (área do jogo)
+        canvas = document.createElement("canvas");
+        canvas.width = LARGURA;
+        canvas.height = ALTURA;
+        document.body.appendChild(canvas);
+
+        // pega o ctx (caneta para desenhar)
+        ctx = canvas.getContext("2d");
+
+        // cria os objetos do jogo
+        fundo = new Desenho(0, 0, LARGURA, ALTURA, "#50beff");
+        chao = new Desenho(0, ALTURA - 50, LARGURA, 50, "#FFFF00");
+        personagem = new Personagem(50, 0, 50, 50, "#FF00FF");
+
+        // fica "ouvindo" pra ver se o jogador clicou
+        document.addEventListener("mousedown", click);
+
+        // começa o jogo pra valer
+        loop();
+      }
+
+      // inicializa o jogo
+      main();
+    </script>
+  </body>
+</html>
