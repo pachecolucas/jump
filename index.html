@@ -1,162 +1,182 @@
+
 <!DOCTYPE html>
 <html lang="pt-br" dir="ltr">
-  <head>
-    <meta charset="utf-8" />
-    <title>Jogo de pular</title>
-    <style>
-      canvas {
-        display: block;
-        margin: 0 auto;
+<head>
+  <meta charset="utf-8">
+  <title>Jogo de pular</title>
+  <style>
+  canvas {
+    display: block;
+    margin: 0 auto;
+  }
+  </style>
+</head>
+<body>
+
+  <script type="text/javascript">
+
+  let ctx, distancia = 0, posObstaculo = 800, j1, j2,j3, o, t;
+
+  class Desenho {
+    constructor(x, y, w, h, c) {
+      this.x = x;
+      this.y = y;
+      this.w = w;
+      this.h = h;
+      this.c = c;
+}
+
+    desenha() {
+      ctx.fillStyle = this.c;
+      ctx.fillRect(this.x, this.y, this.w, this.h);
+    }
+
+  }
+
+  class Jogador extends Desenho {
+
+    constructor() {
+      super(50, 50, 100, 100, "green");
+      let self = this;
+      document.addEventListener("mousedown", function(){
+        self.pula();
+      });
+    }
+
+    atualiza() {
+      if (this.y + this.h >= 600) {
+        this.y = 500;
+      } else {
+        this.y += 26;
       }
-    </style>
-  </head>
-  <body>
-    <script type="text/javascript">
-      let ctx,
-        distancia = 0,
-        posObstaculo = 800,
-        j,
-        o,
-        t;
+    }
 
-      class Desenho {
-        constructor(x, y, w, h, c) {
-          this.x = x;
-          this.y = y;
-          this.w = w;
-          this.h = h;
-          this.c = c;
-        }
+    pula() {
+      this.y -= 100;
+    }
 
-        desenha() {
-          ctx.fillStyle = this.c;
-          ctx.fillRect(this.x, this.y, this.w, this.h);
-        }
+    atira() {
+      console.log("Hora de atirar");
+    }
+
+  }
+
+  class Obstaculo extends Desenho {
+
+    constructor() {
+      super(800, 500, 50, 100, "red");
+    }
+
+    desenha() {
+      super.desenha();
+    }
+
+    atualiza() {
+      this.x -= 20;
+    }
+
+  }
+
+  class Tiro extends Desenho {
+
+    constructor() {
+      super(800, 300, 100, 20, "blue");
+    }
+
+    desenha() {
+      super.desenha();
+    }
+
+    atualiza() {
+      this.x -= 30;
+    }
+  }
+
+  function main() {
+    // cria o canvas (área do jogo)
+    let canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 600;
+    document.body.appendChild(canvas);
+
+    // pega o ctx (caneta para desenhar)
+    ctx = canvas.getContext("2d");
+
+    // cria o jogador
+    j1 = new Jogador();
+    j2 = new Jogador();
+    j3 = new Jogador();
+    j2.x = 250;
+    j2.c = "yellow";
+    j3.x = 450
+    j3.c ="blue"
+
+    // cria obstáculos
+    o = [new Obstaculo()];
+
+    // cria tiro
+    // t = new Tiro();
+
+    // repetição
+    window.setInterval('loop()', 500);
+  }
+
+  function loop() {
+    console.log("chamou loop() ...");
+    // limpa tudo
+    ctx.fillStyle = "#F5F5F5";
+    ctx.fillRect(0, 0, 800, 600);
+
+    // desenha o jogador
+    j1.desenha();
+    j2.desenha();
+    j3.desenha();
+
+    // veja se deve adicionar um novo obstáculo
+    if (o[o.length-1].x < 500) {
+      o.push(new Obstaculo());
+    }
+
+
+    // desenha obstáculo
+    for (let i = 0; i < o.length; i++) {
+      o[i].desenha();
+    }
+
+    // desenha tiro
+    // t.desenha();
+
+    // verifica colisão
+    // let
+    //   a = j.x,
+    //   b = j.x + j.w,
+    //   c = o.x,
+    //   d = o.x + o.w;
+    // if (b >= c && a <= d) {
+    //  alert("colidiu");
+    // }
+
+    // atualiza todos
+    j1.atualiza();
+    j2.atualiza();
+    j3.atualiza();
+
+    // desenha obstáculo
+    for (let i = 0; i < o.length; i++) {
+      o[i].atualiza();
+    }
+
+    // tira quem está fora da tela
+    for (let i = 0; i < o.length; i++) {
+      if (o[i].x < -o[i].w) {
+        o.splice(i, 1);
+        console.log(o);
       }
+    }
 
-      class DesenhoMovel extends Desenho {
-        constructor(x, y, w, h, c) {
-          super(x, y, w, h, c);
-          this.linhaA = new Linha(this.x);
-          this.linhaB = new Linha(this.x + this.w);
-        }
+}
+  main();
 
-        desenha() {
-          super.desenha();
-          this.linhaA.x = this.x;
-          this.linhaB.x = this.x + this.w;
-          this.linhaA.desenha();
-          this.linhaB.desenha();
-        }
+  </script>
 
-        atualiza() {}
-      }
-
-      class Jogador extends DesenhoMovel {
-        constructor() {
-          super(50, 50, 100, 100, "green");
-        }
-
-        desenha() {
-          super.desenha();
-        }
-
-        atualiza() {
-          if (this.y + this.h >= 600) {
-            this.y = 500;
-          } else {
-            this.y += 26;
-          }
-        }
-      }
-
-      class Obstaculo extends DesenhoMovel {
-        constructor() {
-          super(800, 500, 50, 100, "red");
-        }
-
-        desenha() {
-          super.desenha();
-        }
-
-        atualiza() {
-          this.x -= 20;
-        }
-      }
-
-      class Tiro extends DesenhoMovel {
-        constructor() {
-          super(800, 300, 100, 20, "blue");
-        }
-
-        desenha() {
-          super.desenha();
-        }
-
-        atualiza() {
-          this.x -= 30;
-        }
-      }
-
-      class Linha extends Desenho {
-        constructor(x) {
-          super(x, 0, 1, 600, "red");
-        }
-      }
-
-      function main() {
-        // cria o canvas (área do jogo)
-        let canvas = document.createElement("canvas");
-        canvas.width = 800;
-        canvas.height = 600;
-        document.body.appendChild(canvas);
-
-        // pega o ctx (caneta para desenhar)
-        ctx = canvas.getContext("2d");
-        window.setInterval("loop()", 500);
-
-        // cria o jogador
-        j = new Jogador();
-
-        // cria obstáculo
-        o = new Obstaculo();
-
-        // cria tiro
-        t = new Tiro();
-      }
-
-      function loop() {
-        console.log("chamou loop() ...");
-        // limpa tudo
-        ctx.fillStyle = "#F5F5F5";
-        ctx.fillRect(0, 0, 800, 600);
-
-        // desenha o jogador
-        j.desenha();
-
-        // desenha obstáculo
-        o.desenha();
-
-        // desenha tiro
-        t.desenha();
-
-        // verifica colisão
-        let a = j.x,
-          b = j.x + j.w,
-          c = o.x,
-          d = o.x + o.w;
-        if (b >= c && a <= d) {
-          alert("colidiu");
-        }
-
-        // atualiza todos
-        j.atualiza();
-        o.atualiza();
-        t.atualiza();
-        console.log(j, o);
-      }
-
-      main();
-    </script>
-  </body>
 </html>
