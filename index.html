@@ -1,159 +1,339 @@
-
 <!DOCTYPE html>
 <html lang="pt-br" dir="ltr">
-<head>
-  <meta charset="utf-8">
-  <title>Jogo de pular</title>
-  <style>
-  canvas {
-    display: block;
-    margin: 0 auto;
-  }
-  </style>
-</head>
-<body>
-
-<script type="text/javascript">
-
-  class Desenho {
-    constructor(x, y, w, h, c) {
-      this.x = x;
-      this.y = y;
-      this.w = w;
-      this.h = h;
-      this.c = c;
-  }
-
-    desenha(ctx) {
-      ctx.fillStyle = this.c;
-      ctx.fillRect(this.x, this.y, this.w, this.h);
-    }
-
-  }
-
-  class Chao extends Desenho {
-    constructor() {
-      super(0, 550, 800, 50, "#004400");
-    }
-  }
-
-
-  class Jogador extends Desenho {
-
-    constructor() {
-      super(50, 50, 100, 100, "green");
-      let self = this;
-
-      document.body.onkeyup = function(e){
-        if(e.keyCode == 32){ 
-          self.pula();
+  <head>
+    <meta charset="utf-8" />
+    <title>Jogo de pular</title>
+    <style>
+      html,
+      body,
+      canvas {
+        margin: 0;
+        padding: 0;
+        touch-action: manipulation;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript">
+      class Jogo {
+        static get CONFIG() {
+          return {
+            GRAVIDADE: 1.5,
+            LARGURA: window.innerWidth,
+            ALTURA: window.innerHeight,
+            FORCA_PULO: 20,
+            QTD_MAX_PULOS: 3,
+            VELOCIDADE: 3.8,
+            CORES: [
+              "#F39382",
+              "#827494",
+              "#384593",
+              "#938457",
+              "#946224",
+              "#000000"
+            ]
+          };
         }
-      }
-    }
 
-    desenha(ctx) {
-      if (this.y + this.h >= 550) { // chegou no chão?
-        this.y = 450;
-      } else { // se não chegou, continua caindo
-        this.y += 26;
-      }
-      super.desenha(ctx);
-    }
+        static get STATUS() {
+          return {
+            INICIANDO: 1,
+            JOGANDO: 2,
+            GAMEOVER: 3
+          };
+        }
 
-    pula() {
-      this.y -= 100;
-    }
+        constructor() {
+          this.frames = 0;
+          this.status = Jogo.STATUS.INICIANDO;
+          // cria o canvas (área do jogo)
+          let canvas = document.createElement("canvas");
+          canvas.width = Jogo.CONFIG.LARGURA;
+          canvas.height = Jogo.CONFIG.ALTURA;
+          document.body.appendChild(canvas);
+          // pega o ctx (caneta para desenhar)
+          this.ctx = canvas.getContext("2d");
+          // fica "ouvindo" pra ver se o jogador clicou
+          document.addEventListener("mousedown", this.acaoDoJogador.bind(this));
+          document.addEventListener("keypress", this.acaoDoJogador.bind(this));
+        }
 
-    colidiu(obstaculos) {
-      for(var i = 0; i < obstaculos.length; i++) {
-        var o = obstaculos[i];
-        //console.log("Jogador", this.x + this.w);
-        //console.log("Obstáculo", o.x);
-        if (this.x + this.w >= o.x && this.x <= o.x + o.w) { // colide verticalmente
-            console.log("COLISAO VERTICAL!");
-            if (this.y + this.h >= o.y && this.y <= o.y + o.h) {// colide horizontalmente
-              console.log("COLISAO HORIZONTAL!");
-              return true;
+        iniciar() {
+          // cria os objetos do jogo
+          this.fundo = new Desenho(
+            0,
+            0,
+            Jogo.CONFIG.LARGURA,
+            Jogo.CONFIG.ALTURA,
+            "#50beff"
+          );
+          this.chao = new Chao();
+          this.personagem = new Personagem(this.chao);
+          this.placar = new Texto(0);
+          this.loop();
+        }
+
+        acaoDoJogador(e) {
+          e.preventDefault();
+          if (
+            // se
+            (e.type === "keypress" &&
+              (e.key === " " || e.key === "Spacebar")) || // apertou espacou // ou
+            e.type === "mousedown" // clicou
+          ) {
+            switch (this.status) {
+              case Jogo.STATUS.INICIANDO:
+                this.status = Jogo.CONFIG.JOGANDO;
+                this.iniciar();
+                break;
+              case Jogo.STATUS.GAMEOVER:
+                break;
+              default:
+                // jogando
+                this.personagem.pula();
+                break;
             }
+          }
+        }
+
+        drawAll() {
+          // limpa tudo
+          this.ctx.fillStyle = "#ffffff";
+          this.ctx.fillRect(0, 0, Jogo.CONFIG.LARGURA, Jogo.CONFIG.ALTURA);
+          // desenha objetos
+          this.fundo.draw(this.ctx);
+          this.chao.draw(this.ctx, this.personagem);
+          this.personagem.draw(this.ctx, this.chao);
+          this.placar.draw(this.ctx);
+        }
+
+        updateAll() {
+          this.chao.update(this.personagem, this.placar);
+          this.personagem.update(this.chao);
+        }
+
+        loop() {
+          !this.personagem.vivo ? (this.status = Jogo.STATUS.GAMEOVER) : null;
+          switch (this.status) {
+            case Jogo.STATUS.INICIANDO:
+              this.drawAll();
+              let boasVindas1 = new Texto("CLIQUE ou use ESPAÇO", 120, 300);
+              let boasVindas2 = new Texto("para começar o jogo", 175, 360);
+              boasVindas1.draw(this.ctx);
+              boasVindas2.draw(this.ctx);
+              break;
+            case Jogo.STATUS.GAMEOVER:
+              if (this.placar.texto > localStorage.getItem("record")) {
+                localStorage.setItem("record", this.placar.texto);
+                let txtRecord1 = new Texto("NOVO RECORD!!!", 180, 300);
+                let txtRecord2 = new Texto(
+                  "Você fez " +
+                    this.placar.texto +
+                    " ponto" +
+                    (this.placar.texto > 1 ? "s" : "") +
+                    " :)",
+                  180,
+                  360
+                );
+                txtRecord1.draw(this.ctx);
+                txtRecord2.draw(this.ctx);
+              } else {
+                let txtPerdeu = new Texto(
+                  "Você fez " + this.placar.texto + " pontos.",
+                  180,
+                  300
+                );
+                txtPerdeu.draw(this.ctx);
+              }
+              this.status = Jogo.STATUS.INICIANDO;
+              break;
+            default:
+              // JOGANDO
+              this.updateAll();
+              this.drawAll();
+              window.requestAnimationFrame(this.loop.bind(this));
+              break;
+          }
         }
       }
-      return false;
-    }
 
-  }
+      class Texto {
+        constructor(texto, x = 50, y = 80) {
+          this.x = x;
+          this.y = y;
+          this.texto = texto;
+          this.font = "50px Arial";
+          this.c = "#ffffff";
+        }
 
-  class Obstaculo extends Desenho {
-
-    constructor() {
-      super(800, 450, 50, 100, "red");
-    }
-
-    desenha(ctx) {
-      this.x -= 25;
-      super.desenha(ctx);
-    }
-
-  }
-
-  class Fundo extends Desenho {
-    constructor() {
-      super(0,0,800,600,"#DDDDFF");
-    }
-  }
-
-  class Jogo {
-
-    constructor() {
-      // cria o canvas
-      this.setCanvas();
-      this.inicia();
-      this.conta = 1;
-      this.jogando = true;
-    }
-
-    setCanvas() {
-      let canvas = document.createElement("canvas");
-      canvas.width = 800;
-      canvas.height = 600;
-      document.body.appendChild(canvas);
-      this.ctx = canvas.getContext("2d");
-    }
-
-    inicia() {
-      this.fundo = new Fundo();
-      this.j = new Jogador();
-      this.chao = new Chao();
-      this.obstaculos = [];
-      this.obstaculos.push(new Obstaculo());
-      var self = this;
-      setInterval(function(){return self.repete();}, 250);
-    }
-
-    limpaTela() {
-      this.fundo.desenha(this.ctx);
-    }
-
-    repete() {
-      if (!this.jogando) {
-        console.log("Eu não vou entrar aqui!");
-        return false;
+        draw(ctx) {
+          ctx.fillStyle = this.c;
+          ctx.font = this.font;
+          ctx.fillText(this.texto, this.x, this.y);
+        }
       }
-      console.log("REPETINDO...", this.conta);
-      this.conta++;
 
-      this.limpaTela();
-      this.chao.desenha(this.ctx);
-      this.j.desenha(this.ctx);
-      this.obstaculos[0].desenha(this.ctx);
-      if (this.j.colidiu(this.obstaculos)) {
-        this.jogando = false;
-        console.log("FIM DE JOGO!");
+      class Desenho {
+        // método construtor
+        constructor(x = 0, y = 0, w = 50, h = 50, c = "#ff0000") {
+          this.x = x; // posição horizontal (da esquerda para a direita)
+          this.y = y; // posição vertical (de cima para baixo)
+          this.w = w; // largura (width)
+          this.h = h; // altura (height)
+          this.c = c; // cor
+        }
+
+        // manda o desenho aparecer na tela
+        draw(ctx) {
+          ctx.fillStyle = this.c;
+          ctx.fillRect(this.x, this.y, this.w, this.h);
+        }
       }
-    }
-  }
 
-  let jogo = new Jogo();
+      class Chao extends Desenho {
+        // método construtor
+        constructor() {
+          // chama o método construtor da classe pai (Desenho)
+          super(0, Jogo.CONFIG.ALTURA - 50, Jogo.CONFIG.LARGURA, 50, "#FFFF00");
+          this.obstaculos = [];
+        }
 
-  </script>
+        add(o) {
+          console.log("Chao adicionando obstáculo");
+          this.obstaculos.push(new Obstaculo(this));
+        }
 
+        remove(indice) {
+          console.log("Chao removendo obstáculo");
+          this.obstaculos.splice(indice, 1);
+        }
+
+        update(personagem, placar) {
+          // remove obstaculos que sairam
+          for (let i = 0; i < this.obstaculos.length; i++) {
+            this.obstaculos[i].update();
+            this.obstaculos[i].saiu() ? this.remove(i) : null;
+          }
+
+          // adiciona novos objetos se é o momento
+          let maisRecente =
+            this.obstaculos.length > 1
+              ? this.obstaculos[this.obstaculos.length - 1]
+              : false;
+          if (
+            !maisRecente ||
+            maisRecente.x <
+              Jogo.CONFIG.LARGURA - (300 + Math.floor(Math.random() * 100))
+          ) {
+            this.add();
+          }
+
+          // verifica se obstáculos formam superados pelo personagem
+          for (let i = 0; i < this.obstaculos.length; i++) {
+            !this.obstaculos[i].passou && personagem.passou(this.obstaculos[i])
+              ? placar.texto++
+              : null;
+          }
+        }
+
+        draw(ctx) {
+          super.draw(ctx);
+          // desenha obstáculos
+          for (let i = 0; i < this.obstaculos.length; i++) {
+            this.obstaculos[i].draw(ctx);
+          }
+        }
+      }
+
+      class Obstaculo extends Desenho {
+        // método construtor
+        constructor(chao) {
+          // chama o método construtor da classe pai (Desenho)
+          let w = 50 + Math.floor(Math.random() * 25);
+          let h = 30 + Math.floor(Math.random() * 100);
+          let c = Jogo.CONFIG.CORES[Math.floor(Math.random() * 5)];
+          super(Jogo.CONFIG.LARGURA, Jogo.CONFIG.ALTURA - chao.h - h, w, h, c);
+          this.passou = false;
+        }
+
+        saiu() {
+          return this.x + this.w < 0 ? true : false;
+        }
+
+        update() {
+          this.x -= Jogo.CONFIG.VELOCIDADE;
+        }
+
+        draw(ctx) {
+          super.draw(ctx);
+        }
+      }
+
+      class Personagem extends Desenho {
+        // método construtor
+        constructor(chao) {
+          // chama o método construtor da classe pai (Desenho)
+          let w = 50,
+            h = 50;
+          super(50, Jogo.CONFIG.ALTURA - chao.h - h, w, h, "#0000FF");
+          // seta os valores específicos da classe Personagem
+          this.vivo = true;
+          this.v = 0; // velocidade
+          this.pulos = 0; // quantidade de pulos (começa sendo sempre 0)
+        }
+
+        pula() {
+          if (this.pulos < Jogo.CONFIG.QTD_MAX_PULOS) {
+            // dá mais um pulo
+            this.y--; // gambiarra
+            this.v = -Jogo.CONFIG.FORCA_PULO;
+            this.pulos++;
+          }
+        }
+
+        update(chao) {
+          // verifica se está pulando
+          if (this.y + this.h + 1 <= chao.y) {
+            // chegou no chao (+1 é uma gambiarra)
+            this.y += this.v;
+            this.v += Jogo.CONFIG.GRAVIDADE;
+          } else {
+            // chegou no chão
+            this.v = 0;
+            this.y = chao.y - this.h;
+            this.pulos = 0;
+          }
+          // verifica se colidiu com algum dos obstáculos
+          for (let i = 0; i < chao.obstaculos.length; i++) {
+            this.colidiu(chao.obstaculos[i]) ? (this.vivo = false) : null;
+          }
+        }
+
+        colidiu(desenho) {
+          return (
+            this.x + this.w > desenho.x &&
+            this.x < desenho.x + desenho.w && // colidiu horizontalmente
+            this.y + this.h > desenho.y &&
+            this.y < desenho.y + desenho.h
+          ); // colidiu verticalmente
+        }
+
+        passou(desenho) {
+          if (this.x > desenho.x + desenho.w) {
+            desenho.passou = true;
+          }
+          return desenho.passou;
+        }
+
+        // método que desenha o personagem na tela
+        draw(ctx) {
+          // invoca o método draw da super classe (Desenho)
+          super.draw(ctx);
+        }
+      }
+      // inicializa o jogo
+      let jogo = new Jogo();
+      jogo.iniciar();
+    </script>
+  </body>
 </html>
