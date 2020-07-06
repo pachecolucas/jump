@@ -1,7 +1,7 @@
-# jump
+# Jump
 Joguinho simples de pular.
 
-## Veja o jogo funcionando em:
+## Demo do Jump
 Acesse o jogo hospedado no Netlify:
 https://pachecolucas-jump.netlify.app/
 
