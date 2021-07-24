@@ -263,10 +263,7 @@
         update() {
           this.x -= Jogo.CONFIG.VELOCIDADE;
         }
-
-        draw(ctx) {
-          super.draw(ctx);
-        }
+        
       }
 
       class Personagem extends Desenho {
@@ -324,12 +321,7 @@
           }
           return desenho.passou;
         }
-
-        // método que desenha o personagem na tela
-        draw(ctx) {
-          // invoca o método draw da super classe (Desenho)
-          super.draw(ctx);
-        }
+        
       }
       // inicializa o jogo
       let jogo = new Jogo();
